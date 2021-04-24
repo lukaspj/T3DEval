@@ -28,21 +28,27 @@ RUN mkdir -p /Torque3D/My\ Projects/Stock/buildFiles/ubuntu \
  && cd /Torque3D/My\ Projects/Stock/buildFiles/ubuntu \
  && cmake ../../../.. -DTORQUE_APP_NAME=Stock -DCMAKE_BUILD_TYPE=Release -DTORQUE_DEDICATED=ON -DVIDEO_WAYLAND=OFF \
  && make
+ 
+FROM ubuntu:20.04 AS runtime
 
-FROM lukaspj/t3deval:base AS runtime
+RUN apt-get update \
+ && apt-get upgrade -y \
+ && apt-get install -y libx11-6 libxft2 libgtk-3-0 libglib2.0-0 iptables sudo
+
+RUN adduser --system --group  --home /workspace app
 
 COPY --from=builder [ \
     "/Torque3D/My Projects/Stock/game/Stock", \
-    "/Torque3D/My Projects/Stock/game/libSDL2-2.0d.so.0.12.0", \
+    "/Torque3D/My Projects/Stock/game/libSDL2-2.0d.so.0.14.0", \
     "/Torque3D/" \
 ]
 
-COPY main.cs /Torque3D/
+COPY main.tscript /Torque3D/
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh && chown -R app:app /Torque3D
 
 # HACK: SDL linking error fix
-RUN ln -s /Torque3D/libSDL2-2.0d.so.0.12.0 /Torque3D/libSDL2-2.0d.so.0 \
+RUN ln -s /Torque3D/libSDL2-2.0d.so.0.14.0 /Torque3D/libSDL2-2.0d.so.0 \
  && ln -s /Torque3D/libSDL2-2.0d.so.0 /usr/lib/libSDL2-2.0d.so.0 \
  && ln -s /Torque3D/libSDL2-2.0d.so.0 /Torque3D/libSDL2-2.0d.so
 

@@ -1,21 +1,27 @@
 package main
 
 import (
+	"github.com/go-chi/chi/middleware"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 )
 
 func main() {
 	c := chi.NewRouter()
+
+	c.Use(
+		cors.AllowAll().Handler)
+
 	worker := NewWorker()
 
 	go worker.Work()
 
 	c.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		render.HTML(w, r,`
+		render.HTML(w, r, `
 <html>
 <form action="/" method="post">
 <textarea rows="20" cols="100" name="script">
@@ -30,7 +36,10 @@ return 3+3;
 `)
 	})
 
-	c.Post("/", func(w http.ResponseWriter, r *http.Request) {
+	c.With(
+		middleware.AllowContentType("text/plain"),
+		middleware.NoCache,
+	).Post("/", func(w http.ResponseWriter, r *http.Request) {
 		script := r.PostFormValue("script")
 		log.Println("Script is: ", script)
 		j := NewJob(script, r.Context())
